@@ -1,16 +1,33 @@
-import pino from 'pino';
-import { config } from './config';
+import pino from "pino";
+import { config } from "./config";
+import type { LevelWithSilent } from "pino";
 
-const level = (config as any).LOG_LEVEL || 'info';
+const rawLevel = String(
+  (config as any)?.LOG_LEVEL ?? process.env.LOG_LEVEL ?? "info"
+).toLowerCase();
+
+const allowed = [
+  "fatal",
+  "error",
+  "warn",
+  "info",
+  "debug",
+  "trace",
+  "silent",
+] as const;
+
+const level: LevelWithSilent = (allowed as readonly string[]).includes(rawLevel)
+  ? (rawLevel as LevelWithSilent)
+  : "info";
 
 const logger = pino({
   level,
   transport: {
-    target: 'pino-pretty',
+    target: "pino-pretty",
     options: {
       colorize: true,
-      translateTime: 'SYS:yyyy-mm-dd HH:MM:ss.l',
-      ignore: 'pid,hostname',
+      translateTime: "SYS:yyyy-mm-dd HH:MM:ss.l",
+      ignore: "pid,hostname",
     },
   },
 });
