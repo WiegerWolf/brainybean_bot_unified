@@ -33,8 +33,8 @@ export async function handleDocument(ctx: Context) {
     
     // Download file
     const fileLink = await ctx.telegram.getFileLink(document.file_id);
-    const response = await fetch(fileLink.href);
-    const fileBuffer = Buffer.from(await response.arrayBuffer());
+  const fetchResponse = await fetch(fileLink.href);
+  const fileBuffer = Buffer.from(await fetchResponse.arrayBuffer());
     
     // Get or create chat
     const chat = await chatRepository.getOrCreate(userId, chatId);
@@ -71,14 +71,14 @@ export async function handleDocument(ctx: Context) {
     
     // Get response
     const messages = await chatRepository.getMessages(chat.id);
-    const response = await openAIService.completion(messages, userId);
-    
-    await ctx.reply(response.content || `Received file: ${document.file_name}`);
-    
+    const aiResponse = await openAIService.completion(messages, userId);
+
+    await ctx.reply(aiResponse.content || `Received file: ${document.file_name}`);
+
     // Save response
     await chatRepository.addMessage(chat.id, {
       role: 'assistant',
-      content: response.content
+      content: aiResponse.content
     });
     
     await analyticsService.trackDocument(userId, chat.id, document.file_name);

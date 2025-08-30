@@ -42,8 +42,8 @@ export async function handleVoiceMessage(ctx: Context) {
   try {
     // Get voice file
     const fileLink = await ctx.telegram.getFileLink(voice.file_id);
-    const response = await fetch(fileLink.href);
-    const oggBuffer = Buffer.from(await response.arrayBuffer());
+  const fetchResponse = await fetch(fileLink.href);
+  const oggBuffer = Buffer.from(await fetchResponse.arrayBuffer());
     
     // Convert to MP3
     const mp3Buffer = await convertVoiceToMp3(oggBuffer);
@@ -73,14 +73,14 @@ export async function handleVoiceMessage(ctx: Context) {
     
     // Get response
     const messages = await chatRepository.getMessages(chat.id);
-    const response = await openAIService.completion(messages, userId);
-    
-    await ctx.reply(response.content || 'I received your voice message.');
-    
+    const aiResponse = await openAIService.completion(messages, userId);
+
+    await ctx.reply(aiResponse.content || 'I received your voice message.');
+
     // Save response
     await chatRepository.addMessage(chat.id, {
       role: 'assistant',
-      content: response.content
+      content: aiResponse.content
     });
     
     await analyticsService.trackVoice(userId, chat.id);
