@@ -15,8 +15,7 @@ yarn-error.log*
 .env
 
 # Drizzle ORM generated files
-drizzle/
-drizzle.config.ts
+data/
 migrations/
 
 # Build output

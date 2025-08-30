@@ -1,0 +1,12 @@
+{
+  "schema": "./src/db/schema.ts",
+  "dialect": "sqlite",
+  "out": "./drizzle",
+  "db": {
+    "url": "./data/bot.db"
+  },
+  "dbCredentials": {
+    "url": "file:./data/bot.db"
+  },
+  "migrationsFolder": "./drizzle/migrations"
+}
