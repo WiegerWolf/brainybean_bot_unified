@@ -20,16 +20,19 @@ const level: LevelWithSilent = (allowed as readonly string[]).includes(rawLevel)
   ? (rawLevel as LevelWithSilent)
   : "info";
 
+const pretty = ((config as any)?.LOG_PRETTY ?? process.env.NODE_ENV !== 'production');
 const logger = pino({
   level,
-  transport: {
-    target: "pino-pretty",
-    options: {
-      colorize: true,
-      translateTime: "SYS:yyyy-mm-dd HH:MM:ss.l",
-      ignore: "pid,hostname",
+  ...(pretty && {
+    transport: {
+      target: "pino-pretty",
+      options: {
+        colorize: true,
+        translateTime: "SYS:yyyy-mm-dd HH:MM:ss.l",
+        ignore: "pid,hostname",
+      },
     },
-  },
+  }),
 });
 
 // Wrapper to match the existing interface for error method
