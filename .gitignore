@@ -1,36 +1,34 @@
-# Node.js dependencies
+# Dependencies
 node_modules/
-package-lock.json
-yarn.lock
-pnpm-lock.yaml
+bun.lockb
 
-# Logs
-logs/
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# Environment variables
+# Environment
 .env
+.env.local
+.env.*.local
 
-# Drizzle ORM generated files
+# Database
 data/
-migrations/
+*.db
+*.db-shm
+*.db-wal
 
-# Build output
+# Build outputs
 dist/
 build/
-out/
+*.log
 
-# OS files
-.DS_Store
-Thumbs.db
-
-# IDE files
+# IDE
 .vscode/
 .idea/
 *.swp
+*.swo
+.DS_Store
 
-# Telegram bot session files (if any)
-*.session
+# Test coverage
+coverage/
+.nyc_output/
+
+# Temporary files
+tmp/
+temp/
