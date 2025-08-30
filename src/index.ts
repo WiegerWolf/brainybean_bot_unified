@@ -10,9 +10,10 @@ async function main() {
     await initDatabase();
     
     // Start bot
-    await bot.launch();
-    logger.info(`Bot started with model: ${config.MODEL}`);
-    
+    await bot.launch(() => {
+      logger.info(`Bot started with model: ${config.MODEL}`);
+    });
+
     // Graceful shutdown
     process.once('SIGINT', () => bot.stop('SIGINT'));
     process.once('SIGTERM', () => bot.stop('SIGTERM'));
