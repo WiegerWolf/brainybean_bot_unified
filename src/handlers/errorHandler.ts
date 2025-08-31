@@ -14,11 +14,11 @@ export function withErrorHandling<C extends Context>(handler: Handler<C>): Handl
       await handler(ctx);
     } catch (error) {
       logger.error('Error in handler:', error);
-      if ((error as any)?.name === 'AbortError') {
-        await ctx.reply('Download timed out. Please try again.').catch(() => {});
-        return;
-      }
-      await ctx.reply('Sorry, an error occurred. Please try again.').catch(() => {});
+      const isAbort = (error as any)?.name === 'AbortError';
+      const userMsg = isAbort
+        ? 'Download timed out. Please try again.'
+        : 'Sorry, an error occurred. Please try again.';
+      await ctx.reply(userMsg).catch(() => {});
       const isAdmin = !!ctx.from && config.isAdmin(ctx.from.id);
       if (isAdmin) {
         const details = error instanceof Error
