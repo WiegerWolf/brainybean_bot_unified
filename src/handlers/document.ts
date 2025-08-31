@@ -13,8 +13,9 @@ export const handleDocument = withErrorHandling(async (ctx: BotContext) => {
   const caption = (ctx.message as any).caption;
   
   
-    const mimeType = document.mime_type || mime.getType(document.file_name);
-    if (!mimeType) {
+    const mimeType = document.mime_type || mime.getType(document.file_name || '') || '';
+    const allowed = ['image/', 'text/plain', 'application/pdf']; // adjust as needed
+    if (!mimeType || !allowed.some(p => mimeType.startsWith(p))) {
       await ctx.reply('Unknown file type. Please send a different file.', { parse_mode: 'Markdown' }).catch(async (err: any) => {
         if (err?.code === 'ETELEGRAM') await ctx.reply('Unknown file type. Please send a different file.');
       });
@@ -23,10 +24,18 @@ export const handleDocument = withErrorHandling(async (ctx: BotContext) => {
     
     // Download file
     const fileLink = await ctx.telegram.getFileLink(document.file_id);
-  const fetchResponse = await fetch(fileLink.href);
+  const fetchResponse = await fetch(fileLink.href, { signal: AbortSignal.timeout(20000) });
+  if (!fetchResponse.ok) {
+    throw new Error(`Telegram file fetch failed: ${fetchResponse.status} ${fetchResponse.statusText}`);
+  }
   const fileBuffer = Buffer.from(await fetchResponse.arrayBuffer());
+  const MAX_BYTES = 10 * 1024 * 1024; // 10 MB; tune to backend limits
+  if (fileBuffer.byteLength > MAX_BYTES) {
+    await ctx.reply('File too large. Please send a file under 10 MB.');
+    return;
+  }
     
-    // Get or create chat
+  // Get or create chat
     const chat = await chatRepository.getOrCreate(userId, chatId);
     
     // Add caption if present
