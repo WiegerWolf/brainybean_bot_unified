@@ -12,7 +12,7 @@ export interface BotCommand {
   handler: Middleware<BotContext>;
 }
 
-export const botCommands: BotCommand[] = [
+export const botCommands = [
   {
     command: 'start',
     description: 'Start the bot and get welcome message',
@@ -48,4 +48,4 @@ export const botCommands: BotCommand[] = [
       await ctx.reply(stats, { parse_mode: 'Markdown' });
     }
   }
-];
+] as const satisfies ReadonlyArray<BotCommand>;
