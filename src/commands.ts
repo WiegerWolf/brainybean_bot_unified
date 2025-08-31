@@ -38,9 +38,13 @@ export const botCommands: BotCommand[] = [
     command: 'stats',
     description: 'View usage statistics',
     handler: async (ctx) => {
-      if (!ctx.user) return;
       const { getStats } = await import('./tools/implementations');
-      const stats = await getStats(ctx.user.id, config.isAdmin(ctx.from!.id));
+      const userId = ctx.user?.id ?? ctx.from?.id;
+      if (!userId || !ctx.from?.id) {
+        await ctx.reply('Cannot determine user for stats.');
+        return;
+      }
+      const stats = await getStats(userId, config.isAdmin(ctx.from.id));
       await ctx.reply(stats, { parse_mode: 'Markdown' });
     }
   }
