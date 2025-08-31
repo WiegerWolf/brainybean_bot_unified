@@ -3,6 +3,7 @@ import { openAIService } from "../services/openai";
 import { chatRepository } from "../db/repositories/chat";
 import { analyticsService } from "../services/analytics";
 import { withErrorHandling } from "./errorHandler";
+import { sendMessage, editMessage } from "../services/telegram";
 
 export const handleTextMessage = withErrorHandling(async (ctx: BotContext) => {
   const chatId = ctx.chat!.id;
@@ -37,13 +38,13 @@ export const handleTextMessage = withErrorHandling(async (ctx: BotContext) => {
       // Update message every second to avoid rate limits
       if (Date.now() - lastEdit > 1000) {
         if (!sentMessage) {
-          sentMessage = await ctx.reply(responseText.slice(lastSentIdx), { parse_mode: 'Markdown' });
+          sentMessage = await sendMessage(chatId, responseText.slice(lastSentIdx));
           lastSentIdx = responseText.length;
         } else if (responseText.length <= SAFE) {
-          await ctx.telegram.editMessageText(chatId, sentMessage.message_id, undefined, responseText, { parse_mode: 'Markdown' }).catch(()=>{});
+          await editMessage(chatId, sentMessage.message_id, responseText);
           lastSentIdx = responseText.length;
         } else if (responseText.length - lastSentIdx > 500) {
-          await ctx.reply(responseText.slice(lastSentIdx), { parse_mode: 'Markdown' });
+          await sendMessage(chatId, responseText.slice(lastSentIdx));
           lastSentIdx = responseText.length;
         }
         lastEdit = Date.now();
@@ -52,7 +53,7 @@ export const handleTextMessage = withErrorHandling(async (ctx: BotContext) => {
 
     // On finalization, send any remaining tail
     if (responseText.length > lastSentIdx) {
-      await ctx.reply(responseText.slice(lastSentIdx), { parse_mode: 'Markdown' });
+      await sendMessage(chatId, responseText.slice(lastSentIdx));
     }
 
     // Save assistant response
