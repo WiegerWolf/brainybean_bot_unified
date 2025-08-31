@@ -42,14 +42,24 @@ export const handleTextMessage = withErrorHandling(async (ctx: BotContext) => {
       // Update message every second to avoid rate limits
       if (Date.now() - lastEdit > 1000) {
         if (!sentMessage) {
-          sentMessage = await sendMessage(chatId, responseText.slice(lastSentIdx));
-          lastSentIdx = responseText.length;
+          const chunk = responseText.slice(lastSentIdx, Math.min(responseText.length, lastSentIdx + SAFE));
+          sentMessage = await sendMessage(chatId, chunk);
+          lastSentIdx += chunk.length;
         } else if (responseText.length <= SAFE) {
           await editMessage(chatId, sentMessage.message_id, responseText);
           lastSentIdx = responseText.length;
-        } else if (responseText.length - lastSentIdx > 500) {
-          await sendMessage(chatId, responseText.slice(lastSentIdx));
-          lastSentIdx = responseText.length;
+        } else {
+          // Flush backlog in ≤ SAFE-sized chunks, then send a small tail if needed
+          while (responseText.length - lastSentIdx > SAFE) {
+            const chunk = responseText.slice(lastSentIdx, lastSentIdx + SAFE);
+            await sendMessage(chatId, chunk);
+            lastSentIdx += chunk.length;
+          }
+          if (responseText.length - lastSentIdx > 500) {
+            const chunk = responseText.slice(lastSentIdx, Math.min(responseText.length, lastSentIdx + SAFE));
+            await sendMessage(chatId, chunk);
+            lastSentIdx += chunk.length;
+          }
         }
         lastEdit = Date.now();
       }
