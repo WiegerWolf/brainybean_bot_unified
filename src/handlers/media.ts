@@ -12,8 +12,8 @@ export const handlePhoto = withErrorHandling(async (ctx: Context) => {
     mime_type: 'image/jpeg',
     file_name: 'photo.jpg'
   };
-  
-  await handleDocument(ctx);
+
+  return handleDocument(ctx);
 });
 
 export const handleVideo = withErrorHandling(async (ctx: Context) => {
@@ -25,6 +25,6 @@ export const handleVideo = withErrorHandling(async (ctx: Context) => {
     mime_type: video.mime_type || 'video/mp4',
     file_name: video.file_name || 'video.mp4'
   };
-  
-  await handleDocument(ctx);
+
+  return handleDocument(ctx);
 });
