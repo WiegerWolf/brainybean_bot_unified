@@ -3,7 +3,7 @@ import mime from 'mime';
 import { openAIService } from '../services/openai';
 import { chatRepository } from '../db/repositories/chat';
 import { analyticsService } from '../services/analytics';
-import { logger } from '../utils/logger';
+import { withErrorHandling } from './errorHandler';
 
 async function streamToBuffer(stream: NodeJS.ReadableStream): Promise<Buffer> {
   return new Promise((resolve, reject) => {
@@ -14,17 +14,13 @@ async function streamToBuffer(stream: NodeJS.ReadableStream): Promise<Buffer> {
   });
 }
 
-export async function handleDocument(ctx: Context) {
+export const handleDocument = withErrorHandling(async (ctx: Context) => {
   const chatId = ctx.chat!.id;
   const userId = ctx.from!.id;
   const document = (ctx.message as any).document;
   const caption = (ctx.message as any).caption;
   
-  const typingInterval = setInterval(() => {
-    ctx.sendChatAction('upload_document');
-  }, 4000);
   
-  try {
     const mimeType = document.mime_type || mime.getType(document.file_name);
     if (!mimeType) {
       await ctx.reply('Unknown file type. Please send a different file.');
@@ -83,10 +79,4 @@ export async function handleDocument(ctx: Context) {
     
     await analyticsService.trackDocument(userId, chat.id, document.file_name);
     
-  } catch (error) {
-    logger.error('Error handling document:', error);
-    await ctx.reply('Sorry, I couldn\'t process your document.');
-  } finally {
-    clearInterval(typingInterval);
-  }
-}
+  });

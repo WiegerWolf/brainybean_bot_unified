@@ -3,7 +3,7 @@ import { spawn } from 'node:child_process';
 import { openAIService } from '../services/openai';
 import { chatRepository } from '../db/repositories/chat';
 import { analyticsService } from '../services/analytics';
-import { logger } from '../utils/logger';
+import { withErrorHandling } from './errorHandler';
 
 async function convertVoiceToMp3(oggBuffer: Buffer): Promise<Buffer> {
   return new Promise((resolve, reject) => {
@@ -29,17 +29,13 @@ async function convertVoiceToMp3(oggBuffer: Buffer): Promise<Buffer> {
   });
 }
 
-export async function handleVoiceMessage(ctx: Context) {
+export const handleVoiceMessage = withErrorHandling(async (ctx: Context) => {
   const chatId = ctx.chat!.id;
   const userId = ctx.from!.id;
   const voice = (ctx.message as any).voice;
   const caption = (ctx.message as any).caption;
   
-  const typingInterval = setInterval(() => {
-    ctx.sendChatAction('typing');
-  }, 4000);
   
-  try {
     // Get voice file
     const fileLink = await ctx.telegram.getFileLink(voice.file_id);
   const fetchResponse = await fetch(fileLink.href);
@@ -85,10 +81,4 @@ export async function handleVoiceMessage(ctx: Context) {
     
     await analyticsService.trackVoice(userId, chat.id);
     
-  } catch (error) {
-    logger.error('Error handling voice message:', error);
-    await ctx.reply('Sorry, I couldn\'t process your voice message.');
-  } finally {
-    clearInterval(typingInterval);
-  }
-}
+  });

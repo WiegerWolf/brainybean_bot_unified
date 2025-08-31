@@ -1,7 +1,8 @@
 import { Context } from 'telegraf';
 import { handleDocument } from './document';
+import { withErrorHandling } from './errorHandler';
 
-export async function handlePhoto(ctx: Context) {
+export const handlePhoto = withErrorHandling(async (ctx: Context) => {
   const photo = (ctx.message as any).photo;
   const largestPhoto = photo[photo.length - 1];
   
@@ -12,10 +13,10 @@ export async function handlePhoto(ctx: Context) {
     file_name: 'photo.jpg'
   };
   
-  return handleDocument(ctx);
-}
+  await handleDocument(ctx);
+});
 
-export async function handleVideo(ctx: Context) {
+export const handleVideo = withErrorHandling(async (ctx: Context) => {
   const video = (ctx.message as any).video;
   
   // Convert video to document format and reuse document handler
@@ -25,5 +26,5 @@ export async function handleVideo(ctx: Context) {
     file_name: video.file_name || 'video.mp4'
   };
   
-  return handleDocument(ctx);
-}
+  await handleDocument(ctx);
+});
