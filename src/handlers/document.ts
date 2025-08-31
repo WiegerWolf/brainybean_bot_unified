@@ -6,6 +6,23 @@ import { analyticsService } from '../services/analytics';
 import { withErrorHandling } from './errorHandler';
 import { ALLOWED_PREFIXES, ALLOWED_EXACT } from '../constants/mime';
 
+function splitIntoTelegramChunks(text: string, max = 4096): string[] {
+  const parts: string[] = [];
+  let i = 0;
+  while (i < text.length) {
+    let end = Math.min(i + max, text.length);
+    // Prefer to split at a newline/space when possible
+    if (end < text.length) {
+      const nl = text.lastIndexOf('\n', end - 1);
+      const sp = text.lastIndexOf(' ', end - 1);
+      const splitAt = Math.max(nl, sp);
+      if (splitAt > i + Math.floor(max * 0.6)) end = splitAt + 1;
+    }
+    parts.push(text.slice(i, end));
+    i = end;
+  }
+  return parts;
+}
 
 export const handleDocument = withErrorHandling(async (ctx: BotContext) => {
   const chatId = ctx.chat?.id ?? ctx.chatId;
@@ -97,9 +114,13 @@ export const handleDocument = withErrorHandling(async (ctx: BotContext) => {
     const aiResponse = await openAIService.completion(messages, userId);
 
     const finalText = (aiResponse.content || `Received file: ${filename}`).trim() || '…';
-    await ctx.reply(finalText, { parse_mode: 'Markdown' }).catch(async (err: any) => {
-      if (err?.code === 'ETELEGRAM') await ctx.reply(finalText);
-    });
+    for (const chunk of splitIntoTelegramChunks(finalText, 4096)) {
+      const trimmedChunk = chunk.trim();
+      if (trimmedChunk) {
+        await ctx.reply(trimmedChunk, { parse_mode: 'Markdown' })
+          .catch(async (err: any) => { if (err?.code === 'ETELEGRAM') await ctx.reply(trimmedChunk).catch(() => {}); });
+      }
+    }
 
     // Save response
     await chatRepository.addMessage(chat.id, {
