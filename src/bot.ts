@@ -3,11 +3,8 @@ import { config } from './utils/config';
 import { handleTextMessage, handleVoiceMessage, handleDocument, handlePhoto, handleVideo } from './handlers';
 import { userRepository } from './db/repositories/user';
 import { logger } from './utils/logger';
-
-interface BotContext extends Context {
-  user?: any;
-  chatId?: number;
-}
+import { botCommands } from './commands';
+import type { BotContext } from './commands';
 
 export const bot = new Telegraf<BotContext>(config.TELEGRAM_BOT_TOKEN);
 
@@ -27,21 +24,13 @@ bot.use(async (ctx, next) => {
   return next();
 });
 
-// Command handlers
-bot.command('start', async (ctx) => {
-  await ctx.reply(`Welcome! I'm using model: ${config.MODEL}`);
-});
-
-bot.command('reset', async (ctx) => {
-  const { chatRepository } = await import('./db/repositories/chat');
-  await chatRepository.clearHistory(ctx.chatId!);
-  await ctx.reply('Chat history cleared. Everything above this message has been forgotten.');
-});
-
-bot.command('stats', async (ctx) => {
-  const { getStats } = await import('./tools/implementations');
-  const stats = await getStats(ctx.user.id, config.isAdmin(ctx.from!.id));
-  await ctx.reply(stats, { parse_mode: 'Markdown' });
+// Register commands dynamically
+botCommands.forEach(({ command, handler }) => {
+  if ((botCommands.filter(c => c.command === command).length) > 1) {
+    logger.warn(`Duplicate command detected: /${command}`);
+  }
+  bot.command(command, handler);
+  logger.debug(`Registered bot command: /${command}`);
 });
 
 // Message handlers

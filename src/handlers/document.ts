@@ -1,4 +1,4 @@
-import { Context } from 'telegraf';
+import type { BotContext } from '../commands';
 import mime from 'mime';
 import { openAIService } from '../services/openai';
 import { chatRepository } from '../db/repositories/chat';
@@ -14,7 +14,7 @@ async function streamToBuffer(stream: NodeJS.ReadableStream): Promise<Buffer> {
   });
 }
 
-export async function handleDocument(ctx: Context) {
+export async function handleDocument(ctx: BotContext) {
   const chatId = ctx.chat!.id;
   const userId = ctx.from!.id;
   const document = (ctx.message as any).document;

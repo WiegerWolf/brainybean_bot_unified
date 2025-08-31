@@ -1,10 +1,10 @@
-import { Context } from 'telegraf';
+import type { BotContext } from '../commands';
 import { openAIService } from '../services/openai';
 import { chatRepository } from '../db/repositories/chat';
 import { analyticsService } from '../services/analytics';
 import { logger } from '../utils/logger';
 
-export async function handleTextMessage(ctx: Context) {
+export async function handleTextMessage(ctx: BotContext) {
   const chatId = ctx.chat!.id;
   const userId = ctx.from!.id;
   const text = ctx.message!.text!;
