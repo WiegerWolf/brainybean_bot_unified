@@ -26,6 +26,8 @@ export const handleTextMessage = withErrorHandling(async (ctx: BotContext) => {
     let responseText = "";
     let lastEdit = Date.now();
     let sentMessage: any = null;
+    const MAX = 4096, SAFE = 3800;
+    let lastSentIdx = 0;
 
     const stream = await openAIService.streamCompletion(messages, userId);
 
@@ -34,34 +36,23 @@ export const handleTextMessage = withErrorHandling(async (ctx: BotContext) => {
 
       // Update message every second to avoid rate limits
       if (Date.now() - lastEdit > 1000) {
-        if (sentMessage) {
-          await ctx.telegram
-            .editMessageText(
-              chatId,
-              sentMessage.message_id,
-              undefined,
-              responseText
-            )
-            .catch(() => { /* TODO: add debug-level log */ });
-        } else {
-          sentMessage = await ctx.reply(responseText);
+        if (!sentMessage) {
+          sentMessage = await ctx.reply(responseText.slice(lastSentIdx), { parse_mode: 'Markdown' });
+          lastSentIdx = responseText.length;
+        } else if (responseText.length <= SAFE) {
+          await ctx.telegram.editMessageText(chatId, sentMessage.message_id, undefined, responseText, { parse_mode: 'Markdown' }).catch(()=>{});
+          lastSentIdx = responseText.length;
+        } else if (responseText.length - lastSentIdx > 500) {
+          await ctx.reply(responseText.slice(lastSentIdx), { parse_mode: 'Markdown' });
+          lastSentIdx = responseText.length;
         }
         lastEdit = Date.now();
       }
     }
 
-    // Final update
-    if (sentMessage) {
-      await ctx.telegram
-        .editMessageText(
-          chatId,
-          sentMessage.message_id,
-          undefined,
-          responseText
-        )
-        .catch(() => { /* TODO: add debug-level log */ });
-    } else {
-      await ctx.reply(responseText);
+    // On finalization, send any remaining tail
+    if (responseText.length > lastSentIdx) {
+      await ctx.reply(responseText.slice(lastSentIdx), { parse_mode: 'Markdown' });
     }
 
     // Save assistant response
