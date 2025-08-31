@@ -26,7 +26,13 @@ export async function editMessage(chatId: number, messageId: number, text: strin
       logger.debug(`Markdown parse error, editing without parse_mode for message ${messageId}: ${error.message}`);
       return await bot.telegram.editMessageText(chatId, messageId, undefined, text);
     }
-    // Ignore other errors (like message not modified), but log at debug
-    logger.debug(`Error editing message ${messageId}: ${error.message}`);
+    // Ignore benign errors (e.g., "message is not modified"), rethrow others
+    const desc = (error?.response && error.response.description) || error.message || String(error);
+    if (typeof desc === 'string' && /message is not modified/i.test(desc)) {
+      logger.debug(`Edit skipped for message ${messageId}: ${desc}`);
+      return;
+    }
+    logger.debug(`Error editing message ${messageId}: ${desc}`);
+    throw error;
   }
 }
