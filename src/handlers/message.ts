@@ -42,7 +42,7 @@ export const handleTextMessage = withErrorHandling(async (ctx: Context) => {
               undefined,
               responseText
             )
-            .catch(() => {}); // Ignore edit errors
+            .catch(() => { /* TODO: add debug-level log */ });
         } else {
           sentMessage = await ctx.reply(responseText);
         }
@@ -59,7 +59,7 @@ export const handleTextMessage = withErrorHandling(async (ctx: Context) => {
           undefined,
           responseText
         )
-        .catch(() => {});
+        .catch(() => { /* TODO: add debug-level log */ });
     } else {
       await ctx.reply(responseText);
     }

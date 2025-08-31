@@ -71,12 +71,13 @@ export const handleVoiceMessage = withErrorHandling(async (ctx: Context) => {
     const messages = await chatRepository.getMessages(chat.id);
     const aiResponse = await openAIService.completion(messages, userId);
 
-    await ctx.reply(aiResponse.content || 'I received your voice message.');
+    const replyText = aiResponse.content || 'I received your voice message.';
+    await ctx.reply(replyText);
 
     // Save response
     await chatRepository.addMessage(chat.id, {
       role: 'assistant',
-      content: aiResponse.content
+      content: replyText
     });
     
     await analyticsService.trackVoice(userId, chat.id);
