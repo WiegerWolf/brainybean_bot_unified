@@ -31,7 +31,8 @@ export const handleDocument = withErrorHandling(async (ctx: BotContext) => {
   const fileBuffer = Buffer.from(await fetchResponse.arrayBuffer());
   const MAX_BYTES = 10 * 1024 * 1024; // 10 MB; tune to backend limits
   if (fileBuffer.byteLength > MAX_BYTES) {
-    await ctx.reply('File too large. Please send a file under 10 MB.');
+    await ctx.reply('File too large. Please send a file under 10 MB.', { parse_mode: 'Markdown' })
+      .catch(async (err: any) => { if (err?.code === 'ETELEGRAM') await ctx.reply('File too large. Please send a file under 10 MB.'); });
     return;
   }
     
