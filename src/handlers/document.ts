@@ -61,12 +61,13 @@ export const handleDocument = withErrorHandling(async (ctx: Context) => {
     const messages = await chatRepository.getMessages(chat.id);
     const aiResponse = await openAIService.completion(messages, userId);
 
-    await ctx.reply(aiResponse.content || `Received file: ${document.file_name}`);
+    const replyText = aiResponse.content || `Received file: ${document.file_name}`;
+    await ctx.reply(replyText);
 
     // Save response
     await chatRepository.addMessage(chat.id, {
       role: 'assistant',
-      content: aiResponse.content
+      content: replyText
     });
     
     await analyticsService.trackDocument(userId, chat.id, document.file_name);
