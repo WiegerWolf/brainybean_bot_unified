@@ -1,5 +1,10 @@
 import { z } from "zod";
 
+const logLevelSynonyms: Record<string, string> = {
+  warning: "warn",
+  err: "error",
+};
+
 const configSchema = z.object({
   TELEGRAM_BOT_TOKEN: z.string().min(1, "TELEGRAM_BOT_TOKEN is required"),
   OPENAI_API_KEY: z.string().min(1, "OPENAI_API_KEY is required"),
@@ -27,7 +32,14 @@ const configSchema = z.object({
       return val.toLowerCase() === "true" || val === "1";
     return val;
   }, z.boolean().default(true)),
-  LOG_LEVEL: z.enum(["debug", "info", "warn", "error"]).default("info"),
+  LOG_LEVEL: z.preprocess((val) => {
+    if (val == null) return undefined;
+    if (typeof val === "string") {
+      const lower = val.toLowerCase();
+      return logLevelSynonyms[lower] || lower;
+    }
+    return val;
+  }, z.enum(["trace", "debug", "info", "warn", "error", "fatal"]).default("info")),
 });
 
 class Config {
@@ -64,7 +76,7 @@ class Config {
   get OPENAI_BASE_URL() {
     return this.data.OPENAI_BASE_URL;
   }
-  get LOG_LEVEL(): 'debug' | 'info' | 'warn' | 'error' {
+  get LOG_LEVEL(): "trace" | "debug" | "info" | "warn" | "error" | "fatal" {
     return this.data.LOG_LEVEL;
   }
 
