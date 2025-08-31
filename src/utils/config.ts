@@ -42,6 +42,7 @@ class Config {
   get MODEL() { return this.data.MODEL; }
   get DATABASE_URL() { return this.data.DATABASE_URL; }
   get OPENAI_BASE_URL() { return this.data.OPENAI_BASE_URL; }
+  get LOG_LEVEL() { return this.data.LOG_LEVEL; }
   
   isWhitelisted(userId: number): boolean {
     return this.data.WHITELIST.includes(userId);

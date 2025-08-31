@@ -11,12 +11,13 @@
     "build": "bun build --compile src/index.ts --target bun --outfile dist/bot"
   },
   "dependencies": {
-    "drizzle-orm": "^0.31.1",
     "better-sqlite3": "^11.0.0",
-    "telegraf": "^4.16.3",
-    "openai": "^5.11.0",
     "dotenv": "^17.2.1",
+    "drizzle-orm": "^0.31.1",
     "mime": "^4.0.7",
+    "openai": "^5.11.0",
+    "telegraf": "^4.16.3",
+    "tslog": "^4.9.3",
     "zod": "^3.22.0"
   },
   "devDependencies": {
