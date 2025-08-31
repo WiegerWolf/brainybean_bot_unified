@@ -18,8 +18,12 @@ export const handleDocument = withErrorHandling(async (ctx: BotContext) => {
 
 
     const mimeType = document.mime_type || mime.getType(document.file_name || '') || '';
-    const allowed = ['image/', 'video/', 'audio/', 'text/plain', 'application/pdf']; // keep in sync with media/voice handlers
-    if (!mimeType || !allowed.some(p => mimeType.startsWith(p))) {
+    const allowedPrefixes = ['image/', 'video/', 'audio/']; // keep in sync with media/voice handlers
+    const allowedExact = ['text/plain', 'application/pdf'];
+    const isAllowed =
+      !!mimeType &&
+      (allowedPrefixes.some(p => mimeType.startsWith(p)) || allowedExact.includes(mimeType));
+    if (!isAllowed) {
       await ctx.reply('Unknown file type. Please send a different file.', { parse_mode: 'Markdown' }).catch(async (err: any) => {
         if (err?.code === 'ETELEGRAM') await ctx.reply('Unknown file type. Please send a different file.');
       });
