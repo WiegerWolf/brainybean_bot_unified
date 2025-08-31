@@ -2,7 +2,7 @@ import { Context } from 'telegraf';
 import { config } from './utils/config';
 
 export interface BotContext extends Context {
-  user?: any;
+  user?: { id: number };
   chatId?: number;
 }
 
@@ -33,6 +33,7 @@ export const botCommands: BotCommand[] = [
     command: 'stats',
     description: 'View usage statistics',
     handler: async (ctx) => {
+      if (!ctx.user) return;
       const { getStats } = await import('./tools/implementations');
       const stats = await getStats(ctx.user.id, config.isAdmin(ctx.from!.id));
       await ctx.reply(stats, { parse_mode: 'Markdown' });
