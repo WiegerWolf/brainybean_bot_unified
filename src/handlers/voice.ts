@@ -72,7 +72,9 @@ export const handleVoiceMessage = withErrorHandling(async (ctx: BotContext) => {
     const aiResponse = await openAIService.completion(messages, userId);
 
     const replyText = aiResponse.content || 'I received your voice message.';
-    await ctx.reply(replyText);
+    await ctx.reply(replyText, { parse_mode: 'Markdown' }).catch(async (err: any) => {
+      if (err?.code === 'ETELEGRAM') await ctx.reply(replyText);
+    });
 
     // Save response
     await chatRepository.addMessage(chat.id, {
