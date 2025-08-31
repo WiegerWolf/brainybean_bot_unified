@@ -30,7 +30,7 @@ botCommands.forEach(({ command, handler }) => {
     logger.warn(`Duplicate command detected: /${command}`);
   }
   bot.command(command, handler);
-  logger.debug(`Registered /${command}`);
+  logger.debug(`Registered bot command: /${command}`);
 });
 
 // Message handlers
