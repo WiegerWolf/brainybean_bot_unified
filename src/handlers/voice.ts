@@ -8,6 +8,8 @@ import { withErrorHandling } from './errorHandler';
 async function convertVoiceToMp3(oggBuffer: Buffer): Promise<Buffer> {
   return new Promise((resolve, reject) => {
     const ffmpeg = spawn('ffmpeg', [
+      '-loglevel', 'error',
+      '-nostdin',
       '-i', 'pipe:0',   // input from stdin
       '-ac', '1',       // mono
       '-ar', '16000',   // sample rate 16 kHz (voice-optimized)
@@ -17,10 +19,13 @@ async function convertVoiceToMp3(oggBuffer: Buffer): Promise<Buffer> {
     ]);
     
     const chunks: Buffer[] = [];
+    let stderr = '';
     ffmpeg.stdout.on('data', chunk => chunks.push(chunk));
+    ffmpeg.stderr.setEncoding('utf8');
+    ffmpeg.stderr.on('data', (d) => { stderr += d; });
     ffmpeg.on('error', reject);
     ffmpeg.on('close', code => {
-      if (code !== 0) return reject(new Error(`ffmpeg exited with code ${code}`));
+      if (code !== 0) return reject(new Error(`ffmpeg exited with code ${code}: ${stderr.trim()}`));
       resolve(Buffer.concat(chunks));
     });
     
