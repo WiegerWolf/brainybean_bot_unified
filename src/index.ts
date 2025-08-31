@@ -18,7 +18,7 @@ async function main() {
     process.once('SIGINT', () => bot.stop('SIGINT'));
     process.once('SIGTERM', () => bot.stop('SIGTERM'));
   } catch (error) {
-    logger.error('Failed to start bot:', error);
+    logger.fatal('Failed to start bot:', error);
     process.exit(1);
   }
 }
