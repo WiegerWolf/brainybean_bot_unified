@@ -56,8 +56,10 @@ export const handleTextMessage = withErrorHandling(async (ctx: BotContext) => {
     }
 
     // On finalization, send any remaining tail
-    if (responseText.length > lastSentIdx) {
-      await sendMessage(chatId, responseText.slice(lastSentIdx));
+    while (responseText.length - lastSentIdx > 0) {
+      const chunk = responseText.slice(lastSentIdx, Math.min(responseText.length, lastSentIdx + SAFE));
+      await sendMessage(chatId, chunk);
+      lastSentIdx += chunk.length;
     }
 
     // Save assistant response
