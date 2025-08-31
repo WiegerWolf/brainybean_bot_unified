@@ -8,13 +8,17 @@ import { withErrorHandling } from './errorHandler';
 
 export const handleDocument = withErrorHandling(async (ctx: BotContext) => {
   const chatId = ctx.chat?.id ?? (ctx as any).chatId;
-  const userId = ctx.from?.id!;
+  const userId = ctx.from?.id;
   if (!chatId || !userId) {
     await ctx.reply('Unable to process request: missing chat or user information.', { parse_mode: 'Markdown' }).catch(() => {});
     return;
   }
-  const document = (ctx.message as any).document;
-  const caption = (ctx.message as any).caption;
+  const document = (ctx.message as any)?.document;
+  const caption = (ctx.message as any)?.caption;
+  if (!document) {
+    await ctx.reply('No document found in the message.', { parse_mode: 'Markdown' }).catch(() => {});
+    return;
+  }
 
 
     const mimeType = document.mime_type || mime.getType(document.file_name || '') || '';
@@ -65,14 +69,15 @@ export const handleDocument = withErrorHandling(async (ctx: BotContext) => {
     // Prepare message based on file type
     let message: any;
     const data = `data:${mimeType};base64,${fileBuffer.toString('base64')}`;
-    
+    const filename = document.file_name ?? `${document.file_id}.${mime.getExtension(mimeType) || 'bin'}`;
+
     if (mimeType.startsWith('image/')) {
       message = { type: 'image_url', image_url: { url: data } };
     } else {
       message = {
         type: 'file',
         file: {
-          filename: document.file_name ?? `${document.file_id}.${mime.getExtension(mimeType) || 'bin'}`,
+          filename,
           file_data: data
         }
       };
@@ -102,7 +107,7 @@ export const handleDocument = withErrorHandling(async (ctx: BotContext) => {
     await analyticsService.trackDocument(
       userId,
       chat.id,
-      document.file_name ?? `${document.file_id}.${mime.getExtension(mimeType) || 'bin'}`
+      filename
     );
 
   });

@@ -14,6 +14,10 @@ export function withErrorHandling(handler: Handler): Handler {
       await handler(ctx);
     } catch (error) {
       logger.error('Error in handler:', error);
+      if ((error as any)?.name === 'AbortError') {
+        await ctx.reply('Download timed out. Please try again.');
+        return;
+      }
       await ctx.reply('Sorry, an error occurred. Please try again.');
       const isAdmin = !!ctx.from && config.isAdmin(ctx.from.id);
       if (isAdmin) {
