@@ -4,6 +4,7 @@ import { openAIService } from '../services/openai';
 import { chatRepository } from '../db/repositories/chat';
 import { analyticsService } from '../services/analytics';
 import { withErrorHandling } from './errorHandler';
+import { replyMarkdownOrPlain } from '../services/telegram';
 
 async function convertVoiceToMp3(oggBuffer: Buffer): Promise<Buffer> {
   return new Promise((resolve, reject) => {
@@ -80,9 +81,7 @@ export const handleVoiceMessage = withErrorHandling(async (ctx: BotContext) => {
     const aiResponse = await openAIService.completion(messages, userId);
 
     const replyText = aiResponse.content || 'I received your voice message.';
-    await ctx.reply(replyText, { parse_mode: 'Markdown' }).catch(async (err: any) => {
-      if (err?.code === 'ETELEGRAM') await ctx.reply(replyText);
-    });
+    await replyMarkdownOrPlain(ctx, replyText);
 
     // Save response
     await chatRepository.addMessage(chat.id, {

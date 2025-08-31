@@ -1,3 +1,4 @@
+import { Context } from 'telegraf';
 import { bot } from '../bot';
 import { logger } from '../utils/logger';
 
@@ -13,6 +14,15 @@ export async function sendMessage(chatId: number, text: string, options?: any) {
       return await bot.telegram.sendMessage(chatId, text, options);
     }
     throw error;
+  }
+}
+
+export async function replyMarkdownOrPlain(ctx: Context, text: string) {
+  try {
+    await ctx.reply(text, { parse_mode: 'Markdown' });
+  } catch (e: any) {
+    if (e?.code === 'ETELEGRAM') await ctx.reply(text).catch(() => {});
+    else throw e;
   }
 }
 

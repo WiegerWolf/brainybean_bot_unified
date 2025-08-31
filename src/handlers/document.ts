@@ -5,6 +5,7 @@ import { chatRepository } from '../db/repositories/chat';
 import { analyticsService } from '../services/analytics';
 import { withErrorHandling } from './errorHandler';
 import { ALLOWED_PREFIXES, ALLOWED_EXACT } from '../constants/mime';
+import { replyMarkdownOrPlain } from '../services/telegram';
 
 function splitIntoTelegramChunks(text: string, max = 4096): string[] {
   const parts: string[] = [];
@@ -47,17 +48,14 @@ export const handleDocument = withErrorHandling(async (ctx: BotContext) => {
       !!mimeType &&
       (allowedPrefixes.some(p => mimeType.startsWith(p)) || allowedExact.includes(mimeType));
     if (!isAllowed) {
-      await ctx.reply('Unsupported file type. Allowed: images, videos, audio, text/plain, PDF.', { parse_mode: 'Markdown' }).catch(async (err: any) => {
-        if (err?.code === 'ETELEGRAM') await ctx.reply('Unsupported file type. Allowed: images, videos, audio, text/plain, PDF.');
-      });
+      await replyMarkdownOrPlain(ctx, 'Unsupported file type. Allowed: images, videos, audio, text/plain, PDF.');
       return;
     }
     
     // Download file
     const MAX_BYTES = 10 * 1024 * 1024; // 10 MB; tune to backend limits
     if (typeof document.file_size === 'number' && document.file_size > MAX_BYTES) {
-      await ctx.reply('File too large. Please send a file under 10 MB.', { parse_mode: 'Markdown' })
-        .catch(async (err: any) => { if (err?.code === 'ETELEGRAM') await ctx.reply('File too large. Please send a file under 10 MB.'); });
+      await replyMarkdownOrPlain(ctx, 'File too large. Please send a file under 10 MB.');
       return;
     }
     const fileLink = await ctx.telegram.getFileLink(document.file_id);
@@ -70,8 +68,7 @@ export const handleDocument = withErrorHandling(async (ctx: BotContext) => {
     const fileBuffer = Buffer.from(await fetchResponse.arrayBuffer());
     // Double-check post-download in case size metadata was missing
     if (fileBuffer.byteLength > MAX_BYTES) {
-      await ctx.reply('File too large. Please send a file under 10 MB.', { parse_mode: 'Markdown' })
-        .catch(async (err: any) => { if (err?.code === 'ETELEGRAM') await ctx.reply('File too large. Please send a file under 10 MB.'); });
+      await replyMarkdownOrPlain(ctx, 'File too large. Please send a file under 10 MB.');
       return;
     }
     
@@ -117,8 +114,7 @@ export const handleDocument = withErrorHandling(async (ctx: BotContext) => {
     for (const chunk of splitIntoTelegramChunks(finalText, 4096)) {
       const trimmedChunk = chunk.trim();
       if (trimmedChunk) {
-        await ctx.reply(trimmedChunk, { parse_mode: 'Markdown' })
-          .catch(async (err: any) => { if (err?.code === 'ETELEGRAM') await ctx.reply(trimmedChunk).catch(() => {}); });
+        await replyMarkdownOrPlain(ctx, trimmedChunk);
       }
     }
 

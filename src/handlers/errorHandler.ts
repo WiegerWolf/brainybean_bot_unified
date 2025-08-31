@@ -1,6 +1,7 @@
 import { Context } from 'telegraf';
 import { logger } from '../utils/logger';
 import { config } from '../utils/config';
+import { replyMarkdownOrPlain } from '../services/telegram';
 
 export type Handler<C extends Context = Context> = (ctx: C) => Promise<void>;
 
@@ -27,8 +28,7 @@ export function withErrorHandling<C extends Context>(handler: Handler<C>): Handl
         const json = JSON.stringify(details, null, 2);
         const body = json.length > 3500 ? `${json.slice(0, 3500)}\n… [truncated]` : json;
         const md = `Error details: \`\`\`json\n${body}\`\`\``;
-        await ctx.reply(md, { parse_mode: "Markdown" })
-          .catch(async (e: any) => { if (e?.code === 'ETELEGRAM') await ctx.reply(`Error details: ${body}`).catch(() => {}); });
+        await replyMarkdownOrPlain(ctx, md);
       }
     } finally {
       clearInterval(typingInterval);
