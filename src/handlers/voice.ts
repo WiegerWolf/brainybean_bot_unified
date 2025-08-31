@@ -43,7 +43,10 @@ export const handleVoiceMessage = withErrorHandling(async (ctx: BotContext) => {
   
     // Get voice file
     const fileLink = await ctx.telegram.getFileLink(voice.file_id);
-  const fetchResponse = await fetch(fileLink.href);
+  const fetchResponse = await fetch(fileLink.href, { signal: AbortSignal.timeout(15000) });
+  if (!fetchResponse.ok) {
+    throw new Error(`Telegram file fetch failed: ${fetchResponse.status} ${fetchResponse.statusText}`);
+  }
   const oggBuffer = Buffer.from(await fetchResponse.arrayBuffer());
     
     // Convert to MP3
