@@ -3,6 +3,9 @@ import { z } from "zod";
 const logLevelSynonyms: Record<string, string> = {
   warning: "warn",
   err: "error",
+  critical: "fatal",
+  crit: "fatal",
+  verbose: "debug",
 };
 const toBool = (val: unknown) => {
   if (typeof val !== "string") return val;
