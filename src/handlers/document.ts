@@ -22,15 +22,16 @@ export const handleDocument = withErrorHandling(async (ctx: BotContext) => {
   }
 
 
-    const mimeType = document.mime_type || mime.getType(document.file_name || '') || '';
+    const mimeTypeRaw = document.mime_type || mime.getType(document.file_name || '') || '';
+    const mimeType = mimeTypeRaw.toLowerCase();
     const allowedPrefixes = ALLOWED_PREFIXES;
     const allowedExact = ALLOWED_EXACT;
     const isAllowed =
       !!mimeType &&
       (allowedPrefixes.some(p => mimeType.startsWith(p)) || allowedExact.includes(mimeType));
     if (!isAllowed) {
-      await ctx.reply('Unknown file type. Please send a different file.', { parse_mode: 'Markdown' }).catch(async (err: any) => {
-        if (err?.code === 'ETELEGRAM') await ctx.reply('Unknown file type. Please send a different file.');
+      await ctx.reply('Unsupported file type. Allowed: images, videos, audio, text/plain, PDF.', { parse_mode: 'Markdown' }).catch(async (err: any) => {
+        if (err?.code === 'ETELEGRAM') await ctx.reply('Unsupported file type. Allowed: images, videos, audio, text/plain, PDF.');
       });
       return;
     }
@@ -44,7 +45,8 @@ export const handleDocument = withErrorHandling(async (ctx: BotContext) => {
     }
     const fileLink = await ctx.telegram.getFileLink(document.file_id);
     const url = typeof fileLink === 'string' ? fileLink : fileLink.href;
-    const fetchResponse = await fetch(url, { signal: AbortSignal.timeout(20000) });
+    const DOWNLOAD_TIMEOUT_MS = 20_000;
+    const fetchResponse = await fetch(url, { signal: AbortSignal.timeout(DOWNLOAD_TIMEOUT_MS) });
     if (!fetchResponse.ok) {
       throw new Error(`Telegram file fetch failed: ${fetchResponse.status} ${fetchResponse.statusText}`);
     }
