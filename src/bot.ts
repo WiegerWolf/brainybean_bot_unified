@@ -3,6 +3,7 @@ import { config } from './utils/config';
 import { handleTextMessage, handleVoiceMessage, handleDocument, handlePhoto, handleVideo } from './handlers';
 import { userRepository } from './db/repositories/user';
 import { logger } from './utils/logger';
+import { botCommands } from './commands';
 
 interface BotContext extends Context {
   user?: any;
@@ -27,21 +28,9 @@ bot.use(async (ctx, next) => {
   return next();
 });
 
-// Command handlers
-bot.command('start', async (ctx) => {
-  await ctx.reply(`Welcome! I'm using model: ${config.MODEL}`);
-});
-
-bot.command('reset', async (ctx) => {
-  const { chatRepository } = await import('./db/repositories/chat');
-  await chatRepository.clearHistory(ctx.chatId!);
-  await ctx.reply('Chat history cleared. Everything above this message has been forgotten.');
-});
-
-bot.command('stats', async (ctx) => {
-  const { getStats } = await import('./tools/implementations');
-  const stats = await getStats(ctx.user.id, config.isAdmin(ctx.from!.id));
-  await ctx.reply(stats, { parse_mode: 'Markdown' });
+// Register commands dynamically
+botCommands.forEach(({ command, handler }) => {
+  bot.command(command, handler);
 });
 
 // Message handlers
