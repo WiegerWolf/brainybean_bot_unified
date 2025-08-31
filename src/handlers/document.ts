@@ -94,7 +94,7 @@ export const handleDocument = withErrorHandling(async (ctx: BotContext) => {
     const messages = await chatRepository.getMessages(chat.id);
     const aiResponse = await openAIService.completion(messages, userId);
 
-    const finalText = (aiResponse.content || `Received file: ${document.file_name}`).trim() || '…';
+    const finalText = (aiResponse.content || `Received file: ${filename}`).trim() || '…';
     await ctx.reply(finalText, { parse_mode: 'Markdown' }).catch(async (err: any) => {
       if (err?.code === 'ETELEGRAM') await ctx.reply(finalText);
     });
