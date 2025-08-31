@@ -1,4 +1,4 @@
-import { Context } from 'telegraf';
+import type { Context, Middleware } from 'telegraf';
 import { config } from './utils/config';
 
 export interface BotContext extends Context {
@@ -9,7 +9,7 @@ export interface BotContext extends Context {
 export interface BotCommand {
   command: string;
   description: string;
-  handler: (ctx: BotContext) => Promise<void>;
+  handler: Middleware<BotContext>;
 }
 
 export const botCommands: BotCommand[] = [
