@@ -10,7 +10,7 @@ export const handleTextMessage = withErrorHandling(async (ctx: BotContext) => {
   const userId = ctx.from!.id;
   const text = (ctx.message as any).text as string | undefined;
   if (!text) {
-    await ctx.reply('Please send a text message.');
+    await sendMessage(chatId, 'Please send a text message.');
     return;
   }
 
