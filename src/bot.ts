@@ -26,7 +26,11 @@ bot.use(async (ctx, next) => {
 
 // Register commands dynamically
 botCommands.forEach(({ command, handler }) => {
+  if ((botCommands.filter(c => c.command === command).length) > 1) {
+    logger.warn(`Duplicate command detected: /${command}`);
+  }
   bot.command(command, handler);
+  logger.debug(`Registered /${command}`);
 });
 
 // Message handlers
