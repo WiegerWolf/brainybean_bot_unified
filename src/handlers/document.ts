@@ -27,18 +27,25 @@ export const handleDocument = withErrorHandling(async (ctx: BotContext) => {
     }
     
     // Download file
+    const MAX_BYTES = 10 * 1024 * 1024; // 10 MB; tune to backend limits
+    if (typeof document.file_size === 'number' && document.file_size > MAX_BYTES) {
+      await ctx.reply('File too large. Please send a file under 10 MB.', { parse_mode: 'Markdown' })
+        .catch(async (err: any) => { if (err?.code === 'ETELEGRAM') await ctx.reply('File too large. Please send a file under 10 MB.'); });
+      return;
+    }
     const fileLink = await ctx.telegram.getFileLink(document.file_id);
-  const fetchResponse = await fetch(fileLink.href, { signal: AbortSignal.timeout(20000) });
-  if (!fetchResponse.ok) {
-    throw new Error(`Telegram file fetch failed: ${fetchResponse.status} ${fetchResponse.statusText}`);
-  }
-  const fileBuffer = Buffer.from(await fetchResponse.arrayBuffer());
-  const MAX_BYTES = 10 * 1024 * 1024; // 10 MB; tune to backend limits
-  if (fileBuffer.byteLength > MAX_BYTES) {
-    await ctx.reply('File too large. Please send a file under 10 MB.', { parse_mode: 'Markdown' })
-      .catch(async (err: any) => { if (err?.code === 'ETELEGRAM') await ctx.reply('File too large. Please send a file under 10 MB.'); });
-    return;
-  }
+    const url = typeof fileLink === 'string' ? fileLink : fileLink.href;
+    const fetchResponse = await fetch(url, { signal: AbortSignal.timeout(20000) });
+    if (!fetchResponse.ok) {
+      throw new Error(`Telegram file fetch failed: ${fetchResponse.status} ${fetchResponse.statusText}`);
+    }
+    const fileBuffer = Buffer.from(await fetchResponse.arrayBuffer());
+    // Double-check post-download in case size metadata was missing
+    if (fileBuffer.byteLength > MAX_BYTES) {
+      await ctx.reply('File too large. Please send a file under 10 MB.', { parse_mode: 'Markdown' })
+        .catch(async (err: any) => { if (err?.code === 'ETELEGRAM') await ctx.reply('File too large. Please send a file under 10 MB.'); });
+      return;
+    }
     
   // Get or create chat
     const chat = await chatRepository.getOrCreate(userId, chatId);
