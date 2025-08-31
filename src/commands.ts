@@ -45,11 +45,11 @@ export const botCommands = [
     handler: async (ctx) => {
       const { getStats } = await import('./tools/implementations');
       const userId = ctx.user?.id ?? ctx.from?.id;
-      if (!userId || !ctx.from?.id) {
+      if (!userId) {
         await ctx.reply('Cannot determine user for stats.');
         return;
       }
-      const stats = await getStats(userId, config.isAdmin(ctx.from.id));
+      const stats = await getStats(userId, config.isAdmin(userId));
       await ctx.reply(stats, { parse_mode: 'Markdown' });
     }
   }
