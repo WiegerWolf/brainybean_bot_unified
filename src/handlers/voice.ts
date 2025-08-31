@@ -1,4 +1,4 @@
-import { Context } from 'telegraf';
+import type { BotContext } from '../commands';
 import { spawn } from 'node:child_process';
 import { openAIService } from '../services/openai';
 import { chatRepository } from '../db/repositories/chat';
@@ -29,7 +29,7 @@ async function convertVoiceToMp3(oggBuffer: Buffer): Promise<Buffer> {
   });
 }
 
-export const handleVoiceMessage = withErrorHandling(async (ctx: Context) => {
+export const handleVoiceMessage = withErrorHandling(async (ctx: BotContext) => {
   const chatId = ctx.chat!.id;
   const userId = ctx.from!.id;
   const voice = (ctx.message as any).voice;

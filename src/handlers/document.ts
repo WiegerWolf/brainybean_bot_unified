@@ -1,4 +1,4 @@
-import { Context } from 'telegraf';
+import type { BotContext } from '../commands';
 import mime from 'mime';
 import { openAIService } from '../services/openai';
 import { chatRepository } from '../db/repositories/chat';
@@ -6,7 +6,7 @@ import { analyticsService } from '../services/analytics';
 import { withErrorHandling } from './errorHandler';
 
 
-export const handleDocument = withErrorHandling(async (ctx: Context) => {
+export const handleDocument = withErrorHandling(async (ctx: BotContext) => {
   const chatId = ctx.chat!.id;
   const userId = ctx.from!.id;
   const document = (ctx.message as any).document;

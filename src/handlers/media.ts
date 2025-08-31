@@ -1,8 +1,8 @@
-import { Context } from 'telegraf';
+import type { BotContext } from '../commands';
 import { handleDocument } from './document';
 import { withErrorHandling } from './errorHandler';
 
-export const handlePhoto = withErrorHandling(async (ctx: Context) => {
+export const handlePhoto = withErrorHandling(async (ctx: BotContext) => {
   const photo = (ctx.message as any).photo;
   const largestPhoto = photo[photo.length - 1];
   
@@ -16,7 +16,7 @@ export const handlePhoto = withErrorHandling(async (ctx: Context) => {
   return handleDocument(ctx);
 });
 
-export const handleVideo = withErrorHandling(async (ctx: Context) => {
+export const handleVideo = withErrorHandling(async (ctx: BotContext) => {
   const video = (ctx.message as any).video;
   
   // Convert video to document format and reuse document handler
