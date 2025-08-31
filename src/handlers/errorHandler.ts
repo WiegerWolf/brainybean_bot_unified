@@ -15,12 +15,14 @@ export function withErrorHandling(handler: Handler): Handler {
     } catch (error) {
       logger.error('Error in handler:', error);
       await ctx.reply('Sorry, an error occurred. Please try again.');
-      if (config.isAdmin(ctx.from!.id)) {
+      const isAdmin = !!ctx.from && config.isAdmin(ctx.from.id);
+      if (isAdmin) {
+        const details = error instanceof Error
+          ? { name: error.name, message: error.message, stack: error.stack }
+          : error;
         await ctx.reply(
-          `Error details: \`\`\`json\n${JSON.stringify(error, null, 2)}\`\`\``,
-          {
-            parse_mode: "Markdown",
-          }
+          `Error details: \`\`\`json\n${JSON.stringify(details, null, 2)}\`\`\``,
+          { parse_mode: "Markdown" }
         );
       }
     } finally {
