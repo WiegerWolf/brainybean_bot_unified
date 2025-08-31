@@ -4,10 +4,11 @@ import { openAIService } from '../services/openai';
 import { chatRepository } from '../db/repositories/chat';
 import { analyticsService } from '../services/analytics';
 import { withErrorHandling } from './errorHandler';
+import { ALLOWED_PREFIXES, ALLOWED_EXACT } from '../constants/mime';
 
 
 export const handleDocument = withErrorHandling(async (ctx: BotContext) => {
-  const chatId = ctx.chat?.id ?? (ctx as any).chatId;
+  const chatId = ctx.chat?.id ?? ctx.chatId;
   const userId = ctx.from?.id;
   if (!chatId || !userId) {
     await ctx.reply('Unable to process request: missing chat or user information.', { parse_mode: 'Markdown' }).catch(() => {});
@@ -22,8 +23,8 @@ export const handleDocument = withErrorHandling(async (ctx: BotContext) => {
 
 
     const mimeType = document.mime_type || mime.getType(document.file_name || '') || '';
-    const allowedPrefixes = ['image/', 'video/', 'audio/']; // keep in sync with media/voice handlers
-    const allowedExact = ['text/plain', 'application/pdf'];
+    const allowedPrefixes = ALLOWED_PREFIXES;
+    const allowedExact = ALLOWED_EXACT;
     const isAllowed =
       !!mimeType &&
       (allowedPrefixes.some(p => mimeType.startsWith(p)) || allowedExact.includes(mimeType));
