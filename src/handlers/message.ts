@@ -1,83 +1,83 @@
-import type { BotContext } from '../commands';
-import { openAIService } from '../services/openai';
-import { chatRepository } from '../db/repositories/chat';
-import { analyticsService } from '../services/analytics';
-import { logger } from '../utils/logger';
+import type { BotContext } from "../commands";
+import { openAIService } from "../services/openai";
+import { chatRepository } from "../db/repositories/chat";
+import { analyticsService } from "../services/analytics";
+import { withErrorHandling } from "./errorHandler";
+import { sendMessage, editMessage } from "../services/telegram";
 
-export async function handleTextMessage(ctx: BotContext) {
+export const handleTextMessage = withErrorHandling(async (ctx: BotContext) => {
   const chatId = ctx.chat!.id;
   const userId = ctx.from!.id;
-  const text = ctx.message!.text!;
+  const text = (ctx.message as any).text as string | undefined;
+  if (!text) {
+    await sendMessage(chatId, 'Please send a text message.');
+    return;
+  }
+
   
-  // Show typing indicator
-  const typingInterval = setInterval(() => {
-    ctx.sendChatAction('typing');
-  }, 4000);
-  
-  try {
     // Get or create chat
     const chat = await chatRepository.getOrCreate(userId, chatId);
-    
+
     // Add user message to history
     await chatRepository.addMessage(chat.id, {
-      role: 'user',
-      content: text
+      role: "user",
+      content: text,
     });
-    
+
     // Get chat history
     const messages = await chatRepository.getMessages(chat.id);
-    
+
     // Stream response
-    let responseText = '';
+    let responseText = "";
     let lastEdit = Date.now();
     let sentMessage: any = null;
-    
+    const MAX = 4096, SAFE = 3800;
+    let lastSentIdx = 0;
+
     const stream = await openAIService.streamCompletion(messages, userId);
-    
+
     for await (const chunk of stream) {
       responseText += chunk;
-      
+
       // Update message every second to avoid rate limits
       if (Date.now() - lastEdit > 1000) {
-        if (sentMessage) {
-          await ctx.telegram.editMessageText(
-            chatId,
-            sentMessage.message_id,
-            undefined,
-            responseText
-          ).catch(() => {}); // Ignore edit errors
+        if (!sentMessage) {
+          const chunk = responseText.slice(lastSentIdx, Math.min(responseText.length, lastSentIdx + SAFE));
+          sentMessage = await sendMessage(chatId, chunk);
+          lastSentIdx += chunk.length;
+        } else if (responseText.length <= SAFE) {
+          await editMessage(chatId, sentMessage.message_id, responseText);
+          lastSentIdx = responseText.length;
         } else {
-          sentMessage = await ctx.reply(responseText);
+          // Flush backlog in ≤ SAFE-sized chunks, then send a small tail if needed
+          while (responseText.length - lastSentIdx > SAFE) {
+            const chunk = responseText.slice(lastSentIdx, lastSentIdx + SAFE);
+            await sendMessage(chatId, chunk);
+            lastSentIdx += chunk.length;
+          }
+          if (responseText.length - lastSentIdx > 500) {
+            const chunk = responseText.slice(lastSentIdx, Math.min(responseText.length, lastSentIdx + SAFE));
+            await sendMessage(chatId, chunk);
+            lastSentIdx += chunk.length;
+          }
         }
         lastEdit = Date.now();
       }
     }
-    
-    // Final update
-    if (sentMessage) {
-      await ctx.telegram.editMessageText(
-        chatId,
-        sentMessage.message_id,
-        undefined,
-        responseText
-      ).catch(() => {});
-    } else {
-      await ctx.reply(responseText);
+
+    // On finalization, send any remaining tail
+    while (responseText.length - lastSentIdx > 0) {
+      const chunk = responseText.slice(lastSentIdx, Math.min(responseText.length, lastSentIdx + SAFE));
+      await sendMessage(chatId, chunk);
+      lastSentIdx += chunk.length;
     }
-    
+
     // Save assistant response
     await chatRepository.addMessage(chat.id, {
-      role: 'assistant',
-      content: responseText
+      role: "assistant",
+      content: responseText,
     });
-    
+
     // Log analytics
     await analyticsService.trackMessage(userId, chat.id, responseText.length);
-    
-  } catch (error) {
-    logger.error('Error handling text message:', error);
-    await ctx.reply('Sorry, an error occurred. Please try again.');
-  } finally {
-    clearInterval(typingInterval);
-  }
-}
+  });

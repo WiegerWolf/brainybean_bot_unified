@@ -3,11 +3,14 @@ import { spawn } from 'node:child_process';
 import { openAIService } from '../services/openai';
 import { chatRepository } from '../db/repositories/chat';
 import { analyticsService } from '../services/analytics';
-import { logger } from '../utils/logger';
+import { withErrorHandling } from './errorHandler';
+import { replyMarkdownOrPlain } from '../services/telegram';
 
 async function convertVoiceToMp3(oggBuffer: Buffer): Promise<Buffer> {
   return new Promise((resolve, reject) => {
     const ffmpeg = spawn('ffmpeg', [
+      '-loglevel', 'error',
+      '-nostdin',
       '-i', 'pipe:0',   // input from stdin
       '-ac', '1',       // mono
       '-ar', '16000',   // sample rate 16 kHz (voice-optimized)
@@ -17,10 +20,13 @@ async function convertVoiceToMp3(oggBuffer: Buffer): Promise<Buffer> {
     ]);
     
     const chunks: Buffer[] = [];
+    let stderr = '';
     ffmpeg.stdout.on('data', chunk => chunks.push(chunk));
+    ffmpeg.stderr.setEncoding('utf8');
+    ffmpeg.stderr.on('data', (d) => { stderr += d; });
     ffmpeg.on('error', reject);
     ffmpeg.on('close', code => {
-      if (code !== 0) return reject(new Error(`ffmpeg exited with code ${code}`));
+      if (code !== 0) return reject(new Error(`ffmpeg exited with code ${code}: ${stderr.trim()}`));
       resolve(Buffer.concat(chunks));
     });
     
@@ -29,20 +35,19 @@ async function convertVoiceToMp3(oggBuffer: Buffer): Promise<Buffer> {
   });
 }
 
-export async function handleVoiceMessage(ctx: BotContext) {
+export const handleVoiceMessage = withErrorHandling(async (ctx: BotContext) => {
   const chatId = ctx.chat!.id;
   const userId = ctx.from!.id;
   const voice = (ctx.message as any).voice;
   const caption = (ctx.message as any).caption;
   
-  const typingInterval = setInterval(() => {
-    ctx.sendChatAction('typing');
-  }, 4000);
   
-  try {
     // Get voice file
     const fileLink = await ctx.telegram.getFileLink(voice.file_id);
-  const fetchResponse = await fetch(fileLink.href);
+  const fetchResponse = await fetch(fileLink.href, { signal: AbortSignal.timeout(15000) });
+  if (!fetchResponse.ok) {
+    throw new Error(`Telegram file fetch failed: ${fetchResponse.status} ${fetchResponse.statusText}`);
+  }
   const oggBuffer = Buffer.from(await fetchResponse.arrayBuffer());
     
     // Convert to MP3
@@ -75,20 +80,15 @@ export async function handleVoiceMessage(ctx: BotContext) {
     const messages = await chatRepository.getMessages(chat.id);
     const aiResponse = await openAIService.completion(messages, userId);
 
-    await ctx.reply(aiResponse.content || 'I received your voice message.');
+    const replyText = aiResponse.content || 'I received your voice message.';
+    await replyMarkdownOrPlain(ctx, replyText);
 
     // Save response
     await chatRepository.addMessage(chat.id, {
       role: 'assistant',
-      content: aiResponse.content
+      content: replyText
     });
     
     await analyticsService.trackVoice(userId, chat.id);
     
-  } catch (error) {
-    logger.error('Error handling voice message:', error);
-    await ctx.reply('Sorry, I couldn\'t process your voice message.');
-  } finally {
-    clearInterval(typingInterval);
-  }
-}
+  });

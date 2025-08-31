@@ -1,7 +1,8 @@
 import type { BotContext } from '../commands';
 import { handleDocument } from './document';
+import { withErrorHandling } from './errorHandler';
 
-export async function handlePhoto(ctx: BotContext) {
+export const handlePhoto = withErrorHandling(async (ctx: BotContext) => {
   const photo = (ctx.message as any).photo;
   const largestPhoto = photo[photo.length - 1];
   
@@ -11,11 +12,11 @@ export async function handlePhoto(ctx: BotContext) {
     mime_type: 'image/jpeg',
     file_name: 'photo.jpg'
   };
-  
-  return handleDocument(ctx);
-}
 
-export async function handleVideo(ctx: BotContext) {
+  return handleDocument(ctx);
+});
+
+export const handleVideo = withErrorHandling(async (ctx: BotContext) => {
   const video = (ctx.message as any).video;
   
   // Convert video to document format and reuse document handler
@@ -24,6 +25,6 @@ export async function handleVideo(ctx: BotContext) {
     mime_type: video.mime_type || 'video/mp4',
     file_name: video.file_name || 'video.mp4'
   };
-  
+
   return handleDocument(ctx);
-}
+});
