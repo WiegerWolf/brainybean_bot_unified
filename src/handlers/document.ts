@@ -5,14 +5,6 @@ import { chatRepository } from '../db/repositories/chat';
 import { analyticsService } from '../services/analytics';
 import { withErrorHandling } from './errorHandler';
 
-async function streamToBuffer(stream: NodeJS.ReadableStream): Promise<Buffer> {
-  return new Promise((resolve, reject) => {
-    const chunks: Buffer[] = [];
-    stream.on('data', chunk => chunks.push(chunk));
-    stream.on('end', () => resolve(Buffer.concat(chunks)));
-    stream.on('error', reject);
-  });
-}
 
 export const handleDocument = withErrorHandling(async (ctx: Context) => {
   const chatId = ctx.chat!.id;
