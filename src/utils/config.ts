@@ -64,7 +64,7 @@ class Config {
   get OPENAI_BASE_URL() {
     return this.data.OPENAI_BASE_URL;
   }
-  get LOG_LEVEL() {
+  get LOG_LEVEL(): 'debug' | 'info' | 'warn' | 'error' {
     return this.data.LOG_LEVEL;
   }
 
