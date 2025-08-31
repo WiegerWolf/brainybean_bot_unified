@@ -15,7 +15,9 @@ export const handleDocument = withErrorHandling(async (ctx: BotContext) => {
   
     const mimeType = document.mime_type || mime.getType(document.file_name);
     if (!mimeType) {
-      await ctx.reply('Unknown file type. Please send a different file.');
+      await ctx.reply('Unknown file type. Please send a different file.', { parse_mode: 'Markdown' }).catch(async (err: any) => {
+        if (err?.code === 'ETELEGRAM') await ctx.reply('Unknown file type. Please send a different file.');
+      });
       return;
     }
     
@@ -62,7 +64,9 @@ export const handleDocument = withErrorHandling(async (ctx: BotContext) => {
     const aiResponse = await openAIService.completion(messages, userId);
 
     const replyText = aiResponse.content || `Received file: ${document.file_name}`;
-    await ctx.reply(replyText);
+    await ctx.reply(replyText, { parse_mode: 'Markdown' }).catch(async (err: any) => {
+      if (err?.code === 'ETELEGRAM') await ctx.reply(replyText);
+    });
 
     // Save response
     await chatRepository.addMessage(chat.id, {
