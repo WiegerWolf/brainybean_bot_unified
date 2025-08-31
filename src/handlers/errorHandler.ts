@@ -2,10 +2,10 @@ import { Context } from 'telegraf';
 import { logger } from '../utils/logger';
 import { config } from '../utils/config';
 
-type Handler = (ctx: Context) => Promise<void>;
+export type Handler<C extends Context = Context> = (ctx: C) => Promise<void>;
 
-export function withErrorHandling(handler: Handler): Handler {
-  return async (ctx: Context) => {
+export function withErrorHandling<C extends Context>(handler: Handler<C>): Handler<C> {
+  return async (ctx: C) => {
     const sendTyping = () => { void ctx.sendChatAction('typing').catch(() => {}); };
     sendTyping(); // immediate
     const typingInterval = setInterval(sendTyping, 4000);
