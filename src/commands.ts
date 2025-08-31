@@ -30,8 +30,13 @@ export const botCommands = [
         await ctx.reply('Cannot determine which chat to reset.');
         return;
       }
-      await chatRepository.clearHistory(chatId);
-      await ctx.reply('Chat history cleared. Everything above this message has been forgotten.');
+      try {
+        await chatRepository.clearHistory(chatId);
+        await ctx.reply('Chat history cleared. Everything above this message has been forgotten.');
+      } catch (err) {
+        await ctx.reply('Failed to clear chat history. Please try again later.');
+        throw err;
+      }
     }
   },
   {
