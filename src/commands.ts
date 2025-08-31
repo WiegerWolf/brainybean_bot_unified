@@ -25,7 +25,12 @@ export const botCommands: BotCommand[] = [
     description: 'Clear chat history',
     handler: async (ctx) => {
       const { chatRepository } = await import('./db/repositories/chat');
-      await chatRepository.clearHistory(ctx.chatId!);
+      const chatId = ctx.chat?.id ?? ctx.chatId;
+      if (!chatId) {
+        await ctx.reply('Cannot determine which chat to reset.');
+        return;
+      }
+      await chatRepository.clearHistory(chatId);
       await ctx.reply('Chat history cleared. Everything above this message has been forgotten.');
     }
   },
