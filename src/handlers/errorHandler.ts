@@ -6,9 +6,9 @@ type Handler = (ctx: Context) => Promise<void>;
 
 export function withErrorHandling(handler: Handler): Handler {
   return async (ctx: Context) => {
-    const typingInterval = setInterval(() => {
-      ctx.sendChatAction('typing');
-    }, 4000);
+    const sendTyping = () => { void ctx.sendChatAction('typing').catch(() => {}); };
+    sendTyping(); // immediate
+    const typingInterval = setInterval(sendTyping, 4000);
 
     try {
       await handler(ctx);
