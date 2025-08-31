@@ -12,8 +12,8 @@ const levelMap: Record<string, number> = {
 };
 
 const logger = new Logger({
-  type: "pretty",
-  minLevel: levelMap[config.LOG_LEVEL] || 3, // default to info
+  type: process.env.NODE_ENV === "production" ? "json" : "pretty",
+  minLevel: levelMap[config.LOG_LEVEL],
   name: "BrainyBeanBot",
   maskValuesOfKeys: config.keysForMasking,
   maskValuesOfKeysCaseInsensitive: true,

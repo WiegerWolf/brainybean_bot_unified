@@ -4,6 +4,14 @@ const logLevelSynonyms: Record<string, string> = {
   warning: "warn",
   err: "error",
 };
+const toBool = (val: unknown) => {
+  if (typeof val !== "string") return val;
+  const v = val.trim().toLowerCase();
+  if (["true", "1", "yes", "on"].includes(v)) return true;
+  if (["false", "0", "no", "off"].includes(v)) return false;
+  return val;
+};
+
 
 const configSchema = z.object({
   TELEGRAM_BOT_TOKEN: z.string().min(1, "TELEGRAM_BOT_TOKEN is required"),
@@ -17,21 +25,9 @@ const configSchema = z.object({
       s.trim() === "" ? [] : s.split(",").map((id) => parseInt(id.trim()))
     ),
   OPENAI_BASE_URL: z.string().optional(),
-  ENABLE_STREAMING: z.preprocess((val) => {
-    if (typeof val === "string")
-      return val.toLowerCase() === "true" || val === "1";
-    return val;
-  }, z.boolean().default(true)),
-  ENABLE_TOOLS: z.preprocess((val) => {
-    if (typeof val === "string")
-      return val.toLowerCase() === "true" || val === "1";
-    return val;
-  }, z.boolean().default(true)),
-  ENABLE_VOICE: z.preprocess((val) => {
-    if (typeof val === "string")
-      return val.toLowerCase() === "true" || val === "1";
-    return val;
-  }, z.boolean().default(true)),
+  ENABLE_STREAMING: z.preprocess(toBool, z.boolean().default(true)),
+  ENABLE_TOOLS: z.preprocess(toBool, z.boolean().default(true)),
+  ENABLE_VOICE: z.preprocess(toBool, z.boolean().default(true)),
   LOG_LEVEL: z.preprocess((val) => {
     if (val == null) return undefined;
     if (typeof val === "string") {
