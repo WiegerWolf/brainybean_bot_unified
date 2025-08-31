@@ -12,7 +12,9 @@ const levelMap: Record<string, number> = {
 const logger = new Logger({
   type: "pretty",
   minLevel: levelMap[config.LOG_LEVEL] || 3, // default to info
-  name: "BrainyBeanBot"
+  name: "BrainyBeanBot",
+  maskValuesOfKeys: config.keysForMasking,
+  maskValuesOfKeysCaseInsensitive: true,
 });
 
 export { logger };
