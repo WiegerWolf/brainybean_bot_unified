@@ -15,10 +15,10 @@ export const handleDocument = withErrorHandling(async (ctx: BotContext) => {
   }
   const document = (ctx.message as any).document;
   const caption = (ctx.message as any).caption;
-  
-  
+
+
     const mimeType = document.mime_type || mime.getType(document.file_name || '') || '';
-    const allowed = ['image/', 'text/plain', 'application/pdf']; // adjust as needed
+    const allowed = ['image/', 'video/', 'audio/', 'text/plain', 'application/pdf']; // keep in sync with media/voice handlers
     if (!mimeType || !allowed.some(p => mimeType.startsWith(p))) {
       await ctx.reply('Unknown file type. Please send a different file.', { parse_mode: 'Markdown' }).catch(async (err: any) => {
         if (err?.code === 'ETELEGRAM') await ctx.reply('Unknown file type. Please send a different file.');
