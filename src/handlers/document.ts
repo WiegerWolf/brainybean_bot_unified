@@ -7,8 +7,12 @@ import { withErrorHandling } from './errorHandler';
 
 
 export const handleDocument = withErrorHandling(async (ctx: BotContext) => {
-  const chatId = ctx.chat!.id;
-  const userId = ctx.from!.id;
+  const chatId = ctx.chat?.id ?? (ctx as any).chatId;
+  const userId = ctx.from?.id!;
+  if (!chatId || !userId) {
+    await ctx.reply('Unable to process request: missing chat or user information.', { parse_mode: 'Markdown' }).catch(() => {});
+    return;
+  }
   const document = (ctx.message as any).document;
   const caption = (ctx.message as any).caption;
   
@@ -54,12 +58,12 @@ export const handleDocument = withErrorHandling(async (ctx: BotContext) => {
     if (mimeType.startsWith('image/')) {
       message = { type: 'image_url', image_url: { url: data } };
     } else {
-      message = { 
-        type: 'file', 
-        file: { 
-          filename: document.file_name, 
-          file_data: data 
-        } 
+      message = {
+        type: 'file',
+        file: {
+          filename: document.file_name ?? `${document.file_id}.${mime.getExtension(mimeType) || 'bin'}`,
+          file_data: data
+        }
       };
     }
     
@@ -83,7 +87,11 @@ export const handleDocument = withErrorHandling(async (ctx: BotContext) => {
       role: 'assistant',
       content: finalText
     });
-    
-    await analyticsService.trackDocument(userId, chat.id, document.file_name);
-    
+
+    await analyticsService.trackDocument(
+      userId,
+      chat.id,
+      document.file_name ?? `${document.file_id}.${mime.getExtension(mimeType) || 'bin'}`
+    );
+
   });
