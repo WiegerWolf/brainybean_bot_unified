@@ -8,7 +8,11 @@ import { sendMessage, editMessage } from "../services/telegram";
 export const handleTextMessage = withErrorHandling(async (ctx: BotContext) => {
   const chatId = ctx.chat!.id;
   const userId = ctx.from!.id;
-  const text = (ctx.message as any).text!;
+  const text = (ctx.message as any).text as string | undefined;
+  if (!text) {
+    await ctx.reply('Please send a text message.');
+    return;
+  }
 
   
     // Get or create chat
