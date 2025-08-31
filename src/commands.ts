@@ -1,7 +1,7 @@
 import { Context } from 'telegraf';
 import { config } from './utils/config';
 
-interface BotContext extends Context {
+export interface BotContext extends Context {
   user?: any;
   chatId?: number;
 }

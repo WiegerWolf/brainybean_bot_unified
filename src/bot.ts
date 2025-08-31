@@ -4,11 +4,7 @@ import { handleTextMessage, handleVoiceMessage, handleDocument, handlePhoto, han
 import { userRepository } from './db/repositories/user';
 import { logger } from './utils/logger';
 import { botCommands } from './commands';
-
-interface BotContext extends Context {
-  user?: any;
-  chatId?: number;
-}
+import type { BotContext } from './commands';
 
 export const bot = new Telegraf<BotContext>(config.TELEGRAM_BOT_TOKEN);
 
